@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
 
   return (
-    <div className="app-shell flex flex-col min-h-screen" style={{ background: "#fbfcf8" }}>
+    <div className="app-shell flex flex-col min-h-screen">
       {/* Global topbar */}
       <OdooTopbar />
 

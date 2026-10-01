@@ -19,6 +19,7 @@ export async function GET() {
         by: ["status"],
         where: { companyId },
         _count: { _all: true },
+        _sum: { convertedAmount: true },
       }),
       prisma.expense.findMany({
         where: { companyId },
@@ -33,30 +34,24 @@ export async function GET() {
       }),
     ])
 
-    const statusCounts = statusStats.reduce(
-      (acc: Record<string, number>, s: { status: string; _count: { _all: number } }) => {
-        acc[s.status] = s._count._all
+    const { statusCounts, statusTotals } = statusStats.reduce(
+      (acc, s) => {
+        acc.statusCounts[s.status] = s._count._all
+        acc.statusTotals[s.status] = Number(s._sum.convertedAmount) || 0
         return acc
       },
-      { PENDING: 0, APPROVED: 0, REJECTED: 0, DRAFT: 0 } as Record<string, number>
+      {
+        statusCounts: { PENDING: 0, APPROVED: 0, REJECTED: 0, DRAFT: 0 } as Record<string, number>,
+        statusTotals: { PENDING: 0, APPROVED: 0, REJECTED: 0, DRAFT: 0 } as Record<string, number>,
+      }
     )
-
-    const pendingTotal = await prisma.expense.aggregate({
-      where: { companyId, status: "PENDING" },
-      _sum: { convertedAmount: true },
-    })
-
-    const approvedTotal = await prisma.expense.aggregate({
-      where: { companyId, status: "APPROVED" },
-      _sum: { convertedAmount: true },
-    })
 
     return NextResponse.json({
       role: "ADMIN",
       userCount,
       pendingCount: statusCounts.PENDING || 0,
-      approvedTotal: Number(approvedTotal._sum.convertedAmount) || 0,
-      pendingTotal: Number(pendingTotal._sum.convertedAmount) || 0,
+      approvedTotal: statusTotals.APPROVED || 0,
+      pendingTotal: statusTotals.PENDING || 0,
       expenses: expenseList.map((e) => ({
         id: e.id,
         description: e.description,

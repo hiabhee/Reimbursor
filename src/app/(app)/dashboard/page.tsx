@@ -10,5 +10,14 @@ export default async function DashboardPage() {
     redirect("/login")
   }
 
-  return <DashboardClient />
+  return (
+    <DashboardClient
+      session={{
+        id: session.user.id,
+        name: session.user.name || "",
+        email: session.user.email || "",
+        role: session.user.role,
+      }}
+    />
+  )
 }

@@ -86,7 +86,7 @@ export function OdooTopbar() {
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => signOut()}
+                  onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="w-3.5 h-3.5" /> Sign out

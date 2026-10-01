@@ -31,27 +31,21 @@ export default async function AdminExpensesPage() {
     redirect("/dashboard")
   }
 
-  const expenses = await prisma.expense.findMany({
-    where: { companyId: session.user.companyId },
-    include: {
-      employee: { select: { name: true, email: true } },
-      approvalActions: {
-        include: { approver: { select: { name: true } } },
-        orderBy: { stepOrder: "asc" },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  })
-
-  const company = await prisma.company.findUnique({
-    where: { id: session.user.companyId },
-    select: { currency: true, name: true },
-  })
-
-  const employees = await prisma.user.findMany({
-    where: { companyId: session.user.companyId },
-    select: { id: true, name: true, email: true },
-  })
+  const [expenses, company, employees] = await Promise.all([
+    prisma.expense.findMany({
+      where: { companyId: session.user.companyId },
+      include: { employee: { select: { name: true, email: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.company.findUnique({
+      where: { id: session.user.companyId },
+      select: { currency: true, name: true },
+    }),
+    prisma.user.findMany({
+      where: { companyId: session.user.companyId },
+      select: { id: true, name: true, email: true },
+    }),
+  ])
 
   return (
     <PageShell>

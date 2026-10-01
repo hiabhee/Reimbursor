@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   LayoutDashboard, Receipt, CheckSquare, Settings, Bot,
@@ -29,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function OdooSidebar({ userRole }: { userRole?: string }) {
   const pathname = usePathname()
+  const router = useRouter()
 
   const filtered = NAV_ITEMS.filter((item) => {
     if (!item.roles) return true
@@ -42,14 +43,14 @@ export function OdooSidebar({ userRole }: { userRole?: string }) {
     <aside className="o-sidebar hidden lg:flex flex-col shrink-0">
       <nav className="flex-1 py-2 overflow-y-auto">
         {mainItems.map((item) => (
-          <SidebarLink key={item.href} item={item} pathname={pathname} />
+          <SidebarLink key={item.href} item={item} pathname={pathname} onIntent={() => router.prefetch(item.href)} />
         ))}
 
         {adminItems.length > 0 && (
           <>
             <div className="o-nav-section mt-2">Admin</div>
             {adminItems.map((item) => (
-              <SidebarLink key={item.href} item={item} pathname={pathname} />
+            <SidebarLink key={item.href} item={item} pathname={pathname} onIntent={() => router.prefetch(item.href)} />
             ))}
           </>
         )}
@@ -58,12 +59,12 @@ export function OdooSidebar({ userRole }: { userRole?: string }) {
   )
 }
 
-function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function SidebarLink({ item, pathname, onIntent }: { item: NavItem; pathname: string; onIntent: () => void }) {
   const Icon = item.icon
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
 
   return (
-    <Link href={item.href} className={`o-nav-item ${isActive ? "active" : ""}`}>
+    <Link href={item.href} onMouseEnter={onIntent} onFocus={onIntent} className={`o-nav-item ${isActive ? "active" : ""}`}>
       <Icon className="w-4 h-4 shrink-0 opacity-80" />
       <span className="flex-1">{item.label}</span>
       {isActive && <ChevronRight className="w-3 h-3 opacity-40" />}

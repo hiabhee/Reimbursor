@@ -9,11 +9,16 @@ interface Company {
   currency: string
 }
 
-export function DashboardClient() {
+interface DashboardSession {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
+export function DashboardClient({ session }: { session: DashboardSession }) {
   const [company, setCompany] = useState<Company | null>(null)
   const [showSetup, setShowSetup] = useState(false)
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     fetchCompany()
   }, [])
@@ -27,21 +32,12 @@ export function DashboardClient() {
       }
     } catch (error) {
       console.error("Failed to fetch company:", error)
-    } finally {
-      setLoading(false)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    )
   }
 
   return (
     <DashboardContent
+      session={{ user: session }}
       company={company}
       showSetup={showSetup}
       onShowSetupChange={setShowSetup}

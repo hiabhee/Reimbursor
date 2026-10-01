@@ -12,7 +12,10 @@ export default function WorkflowBuilderPage() {
   useEffect(() => {
     async function fetchWorkflow() {
       try {
-        const response = await fetch('/api/workflow')
+        const [response, usersResponse] = await Promise.all([
+          fetch('/api/workflow'),
+          fetch('/api/users'),
+        ])
         if (response.ok) {
           const data = await response.json()
           if (data.steps && data.steps.length > 0) {
@@ -23,7 +26,6 @@ export default function WorkflowBuilderPage() {
           }
         }
 
-        const usersResponse = await fetch('/api/users')
         if (usersResponse.ok) {
           const usersData = await usersResponse.json()
           setUsers(

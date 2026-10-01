@@ -12,20 +12,21 @@ export default async function ApprovalsPage() {
     redirect("/dashboard")
   }
 
-  const pendingApprovals = await prisma.approvalAction.findMany({
-    where: { approverId: session.user.id, action: "PENDING" },
-    include: {
-      expense: {
-        include: { employee: { select: { id: true, name: true, email: true } } },
+  const [pendingApprovals, company] = await Promise.all([
+    prisma.approvalAction.findMany({
+      where: { approverId: session.user.id, action: "PENDING" },
+      include: {
+        expense: {
+          include: { employee: { select: { id: true, name: true, email: true } } },
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  })
-
-  const company = await prisma.company.findUnique({
-    where: { id: session.user.companyId },
-    select: { currency: true },
-  })
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.company.findUnique({
+      where: { id: session.user.companyId },
+      select: { currency: true },
+    }),
+  ])
 
   return (
     <ApprovalTable

@@ -58,15 +58,15 @@ export default function SignupPage() {
   return (
     <div className="o-auth-card" style={{ maxWidth: 440 }}>
       <div className="flex items-center gap-2 mb-6">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-          <span className="text-white font-bold text-sm">R</span>
+        <div className="auth-brand-mark">
+          <span className="font-bold text-sm">R</span>
         </div>
-        <span className="text-[16px] font-bold text-gray-900">Reimbursor</span>
+        <span className="auth-brand-name text-[17px] font-bold tracking-tight">Reimbursor</span>
       </div>
-      <h1 className="text-[18px] font-bold text-gray-900 mb-1">Create account</h1>
-      <p className="text-[12px] text-gray-500 mb-6">Set up your company workspace</p>
+      <h1 className="auth-title mb-1 text-[24px] font-semibold tracking-tight">Create account</h1>
+      <p className="auth-subtitle mb-6 text-[13px]">Set up your company workspace</p>
       {error && (
-        <div className="mb-4 px-3 py-2 rounded border border-red-200 bg-red-50 text-red-700 text-[12px]">{error}</div>
+        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</div>
       )}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
@@ -81,7 +81,7 @@ export default function SignupPage() {
         </div>
         <div>
           <label className="o-field-label">Password</label>
-          <input type="password" className="o-input" placeholder="At least 8 characters with uppercase, lowercase, and number" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+            <input type="password" className="o-input" placeholder="Create a strong password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
           <p className="mt-1 text-[10px] text-gray-500">Must contain 8+ characters with uppercase, lowercase, and a number</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -96,13 +96,13 @@ export default function SignupPage() {
             </select>
           </div>
         </div>
-        <button type="submit" disabled={loading} className="w-full h-9 rounded-md bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 mt-1">
+        <button type="submit" disabled={loading} className="auth-submit-button mt-1">
           {loading ? "Creating..." : "Create Account"}
         </button>
       </form>
-      <p className="mt-4 text-center text-[12px] text-gray-500">
+      <p className="auth-helper mt-4 text-center text-[12px]">
         Already have an account?{" "}
-        <Link href="/login" className="text-blue-600 hover:underline">Sign in</Link>
+        <Link href="/login" className="auth-link">Sign in</Link>
       </p>
     </div>
   )

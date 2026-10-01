@@ -88,7 +88,7 @@ export function Navbar() {
             <DropdownMenuSeparator className="my-1.5" />
 
             <DropdownMenuItem
-              onClick={() => signOut()}
+              onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
               className="rounded-lg cursor-pointer gap-2 text-red-600 focus:text-red-600"
             >
               <LogOut className="w-4 h-4" />

@@ -46,6 +46,7 @@ const EMPLOYEES = [
 ]
 
 const EXPENSES: DemoExpenseSpec[] = [
+  { description: "Desk setup supplies", category: "EQUIPMENT", amount: 249, currency: "USD", daysAgo: 0, state: "draft", employee: "Workspace Owner" },
   { description: "Hilton San Francisco - 2 nights, client onsite", category: "ACCOMMODATION", amount: 323.68, currency: "USD", daysAgo: 2, state: "pending", employee: "Dana Kim" },
   { description: "Blue Bottle Coffee with client", category: "MEALS", amount: 11.17, currency: "USD", daysAgo: 2, state: "pending", employee: "Dana Kim" },
   { description: "Uber airport to hotel", category: "TRANSPORTATION", amount: 47.5, currency: "USD", daysAgo: 2, state: "approved", employee: "Dana Kim" },

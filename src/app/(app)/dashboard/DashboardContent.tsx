@@ -40,25 +40,23 @@ interface DashboardData {
   draftCount?: number
 }
 interface Session { user: { id: string; name: string; email: string; role: string } }
-interface Props { company: Company | null; showSetup: boolean; onShowSetupChange: (s: boolean) => void }
+interface Props { session: Session; company: Company | null; showSetup: boolean; onShowSetupChange: (s: boolean) => void }
 
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
 }
 
-export function DashboardContent({ company, showSetup, onShowSetupChange }: Props) {
+export function DashboardContent({ session, company, showSetup, onShowSetupChange }: Props) {
   const [data, setData]       = useState<DashboardData | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
   const handleShowSetupChange = useCallback((s: boolean) => onShowSetupChange(s), [onShowSetupChange])
 
   useEffect(() => {
-    Promise.all([fetch("/api/auth/session"), fetch("/api/dashboard/data")])
-      .then(async ([sr, dr]) => {
-        if (sr.ok) setSession(await sr.json())
-        if (dr.ok) {
-          const dashboardData = await dr.json()
+    fetch("/api/dashboard/data")
+      .then(async (response) => {
+        if (response.ok) {
+          const dashboardData = await response.json()
           setData(dashboardData)
         }
       })
@@ -72,7 +70,7 @@ export function DashboardContent({ company, showSetup, onShowSetupChange }: Prop
     }
   }, [company, session, handleShowSetupChange])
 
-  if (loading || !session) {
+  if (loading) {
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">

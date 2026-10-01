@@ -60,17 +60,17 @@ export default function LoginPage() {
     <div className="o-auth-card">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-6">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-          <span className="text-white font-bold text-sm">R</span>
+        <div className="auth-brand-mark">
+          <span className="font-bold text-sm">R</span>
         </div>
-        <span className="text-[16px] font-bold text-gray-900">Reimbursor</span>
+        <span className="auth-brand-name text-[17px] font-bold tracking-tight">Reimbursor</span>
       </div>
 
-      <h1 className="text-[18px] font-bold text-gray-900 mb-1">Sign in</h1>
-      <p className="text-[12px] text-gray-500 mb-6">Enter your credentials to continue</p>
+      <h1 className="auth-title mb-1 text-[24px] font-semibold tracking-tight">Sign in</h1>
+      <p className="auth-subtitle mb-6 text-[13px]">Enter your credentials to continue</p>
 
       {error && (
-        <div role="alert" aria-live="polite" className="mb-4 px-3 py-2 rounded border border-red-200 bg-red-50 text-red-700 text-[12px]">
+        <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
           {error}
         </div>
       )}
@@ -80,15 +80,15 @@ export default function LoginPage() {
         onClick={handleQuickStart}
         disabled={loading || quickStarting}
         aria-busy={quickStarting}
-        className="w-full h-9 rounded-md border border-blue-200 bg-blue-50 text-blue-700 text-[13px] font-semibold hover:bg-blue-100 transition-colors disabled:opacity-60"
+        className="auth-demo-button"
       >
         {quickStarting ? "Setting up your workspace…" : "Try a demo workspace — no email required"}
       </button>
-      <p className="mt-2 text-center text-[10px] text-gray-500">
+      <p className="auth-helper mt-2 text-center text-[11px] leading-relaxed">
         Creates a fresh workspace for exploring. Use “Create account” below for permanent access.
       </p>
 
-      <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-gray-400">
+      <div className="auth-divider my-5 flex items-center gap-3 text-[10px] uppercase tracking-wider">
         <span className="h-px flex-1 bg-gray-200" />
         <span>or sign in</span>
         <span className="h-px flex-1 bg-gray-200" />
@@ -129,17 +129,17 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-9 rounded-md bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 mt-2"
+          className="auth-submit-button mt-2"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
       <div className="mt-4 flex items-center justify-between text-[12px]">
-        <Link href="/forgot-password" className="text-blue-600 hover:underline">
+        <Link href="/forgot-password" className="auth-link">
           Forgot password?
         </Link>
-        <Link href="/signup" className="text-blue-600 hover:underline">
+        <Link href="/signup" className="auth-link">
           Create account
         </Link>
       </div>

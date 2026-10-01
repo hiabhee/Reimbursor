@@ -8,16 +8,17 @@ export default async function ExpensesPage() {
   const session = await getServerSession(authOptions)
   if (!session) redirect("/login")
 
-  const expenses = await prisma.expense.findMany({
-    where: { employeeId: session.user.id },
-    include: { employee: { select: { name: true, email: true } } },
-    orderBy: { createdAt: "desc" },
-  })
-
-  const company = await prisma.company.findUnique({
-    where: { id: session.user.companyId },
-    select: { currency: true },
-  })
+  const [expenses, company] = await Promise.all([
+    prisma.expense.findMany({
+      where: { employeeId: session.user.id },
+      include: { employee: { select: { name: true, email: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.company.findUnique({
+      where: { id: session.user.companyId },
+      select: { currency: true },
+    }),
+  ])
 
   return (
     <ExpenseTable
