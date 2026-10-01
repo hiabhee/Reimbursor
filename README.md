@@ -123,18 +123,14 @@ AI is optional and disabled unless configured. AI output is advisory: it does no
 
 AI review limitations: validation is not backed by configured company policy rules; summaries do not inspect receipt evidence; assistant responses are general guidance. Treat results as suggestions and verify them before acting. There is no automated accuracy evaluation or test suite yet, so enable AI only for a controlled pilot until those controls exist.
 
-### Editorial Enterprise Design System
+### Product experience
 
-- [x] **Material 3-inspired surfaces** - Layered, tonal design
-- [x] **Typography Hierarchy** - Manrope headings, Inter body
-- [x] **Glassmorphic Navbar** - Backdrop blur effect
-- [x] **Active Sidebar** - Strong contrast with gradients
-- [x] **Premium Cards** - No hard borders, soft shadows
-- [x] **Gradient Buttons** - Indigo to purple primary actions
-- [x] **Minimalist Inputs** - Bottom-border only style
-- [x] **Status Badges** - Color-coded with icons
-- [x] **Timeline Component** - Visual approval flow
-- [x] **Smooth Transitions** - 200-300ms animations
+- [x] **Pine and lime visual system** - Shared across the landing page, authenticated workspace, login, and registration screens
+- [x] **Responsive landing page** - Includes a scroll-driven, animated expense journey and reduced-motion fallback
+- [x] **Workspace navigation** - App Router links prefetch on hover or keyboard focus; route loading states keep navigation responsive while data loads
+- [x] **Readable status badges and tables** - Theme-aware surfaces, text, hover states, and controls
+- [x] **Demo workspace** - Login's "Try a demo workspace" button creates a fresh sample company with users, an active multi-step workflow, approval rules, and example expenses
+- [x] **Owner expense example** - Each new demo workspace includes an editable draft in the owner's Expenses tab; team claims are available under Admin → All Expenses
 
 ### Engineering foundations (not a production-readiness claim)
 
@@ -161,7 +157,8 @@ src/
 │   │   │   ├── [id]/            # Expense detail page
 │   │   │   └── new/             # Create expense
 │   │   ├── notifications/       # Notification center
-│   │   └── layout.tsx          # App layout with navbar/sidebar
+│   │   ├── loading.tsx         # Shared authenticated route loading state
+│   │   └── layout.tsx          # Authenticated app layout with topbar/sidebar
 │   ├── (auth)/                  # Public routes (no navbar)
 │   │   ├── forgot-password/      # Password reset request
 │   │   ├── login/               # Login page
@@ -181,15 +178,15 @@ src/
 │   ├── actions/                # Server actions
 │   ├── global-error.tsx        # Global error boundary
 │   ├── layout.tsx             # Root layout
-│   ├── page.tsx               # Root redirect
+│   ├── page.tsx               # Public product landing page
 │   └── providers.tsx           # Session provider
 ├── components/
 │   ├── ui/                     # shadcn/ui components
-│   │   ├── button.tsx          # Gradient primary buttons
-│   │   ├── card.tsx            # Surface-based cards
+│   │   ├── button.tsx          # Theme-aware action buttons
+│   │   ├── card.tsx            # Theme-aware cards
 │   │   ├── dialog.tsx          # Glassmorphic dialogs
-│   │   ├── input.tsx           # Minimalist inputs
-│   │   ├── table.tsx           # Borderless tables
+│   │   ├── input.tsx           # Theme-aware inputs
+│   │   ├── table.tsx           # Theme-aware tables
 │   │   └── timeline.tsx         # Approval flow timeline
 │   ├── AdminExpenseTable.tsx   # Admin dashboard table
 │   ├── AdminOverrideDialog.tsx  # Admin override modal
@@ -202,6 +199,7 @@ src/
 │   └── SubmitExpenseButton.tsx  # Submit action
 └── lib/
     ├── auth.ts                 # NextAuth configuration
+    ├── demo/                   # Demo workspace data and receipt generation
     ├── dashboard.ts            # Dashboard data fetching
     ├── email.ts               # Email service
     ├── logger.ts               # Logging utilities
@@ -342,6 +340,12 @@ NEXT_PUBLIC_SENTRY_DSN=""
 
 Create a local `.env.local` file for development and keep it out of version control. Set `GROQ_API_KEY` on the server and set `AI_ENABLED=true` plus the individual feature flags you want to use. Restart the server after changing environment variables. A missing API key, `AI_ENABLED=false`, or a disabled feature flag turns that feature off. Use your deployment platform's secret manager for production credentials.
 
+Set `NEXTAUTH_URL` to the origin you use to open the app, including its port (for example, `http://localhost:3000`). If port 3000 is occupied and Next.js starts on 3001, use `http://localhost:3001` instead. Sign-out returns to the current browser origin.
+
+### Try the demo workspace
+
+On the login page, choose **Try a demo workspace — no email required**. The app creates and signs into a new sample workspace each time. It includes an active approval workflow, approval rules, multiple demo users, example claims, and an editable owner draft. Use **Admin → Workflow** to view the active steps, **Admin → Approval Rules** to view the separate fallback/high-value rules, and **Admin → All Expenses** to browse team claims. The owner's **Expenses** tab shows their draft claim.
+
 ## Getting Started
 
 ### Prerequisites
@@ -372,7 +376,11 @@ The checked-in seed script creates accounts with fixed development passwords. Re
 
 ## Performance Optimizations
 
-- **Parallel Queries** - Dashboard loads data with `Promise.all`
+- **Parallel Queries** - Independent company, expense, approval, and workflow reads run concurrently with `Promise.all`
+- **Route Feedback** - Shared App Router loading UI appears while authenticated page data is loading
+- **Intent Prefetching** - Sidebar routes prefetch when hovered or focused
+- **Dashboard Startup** - Session data comes from the authenticated server page; dashboard data and company details load concurrently
+- **Reduced Query Work** - Dashboard totals share a grouped aggregation; admin expenses omit unused approval-action joins
 - **Database Indexes** - Optimized for common queries
 - **Selective Fields** - Only fetch required data
 - **Idempotent Operations** - Prevent duplicate processing
