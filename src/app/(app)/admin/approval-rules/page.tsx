@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, GripVertical, ShieldCheck } from "lucide-react"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 
 interface User {
   id: string
@@ -136,26 +137,21 @@ export default function ApprovalRulesPage() {
   const managers = users.filter(u => u.role === "MANAGER" || u.role === "ADMIN")
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="o-breadcrumb">
-        <span className="text-gray-400 text-[12px]">Admin</span>
-        <span className="text-gray-300 mx-1">/</span>
-        <span className="text-[13px] font-semibold text-gray-800">Approval Rules</span>
-      </div>
-      <div className="flex-1 overflow-auto p-4 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-page-title">Approval Rules</h1>
-            <p className="text-body-muted mt-1">Define who approves expenses and in what order.</p>
-          </div>
-          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5 shrink-0">
+    <PageShell>
+        <PageIntro
+          eyebrow="Administration"
+          title="Approval Rules"
+          description="Define who approves expenses and in what order."
+          actions={
+            <Button className="h-10 gap-2 px-4" onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4" /> New Rule
-          </Button>
-        </div>
+            </Button>
+          }
+        />
 
       {/* Form */}
       {showForm && (
-        <Card className="shadow-elevation-2 border-border/70">
+        <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-6">
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
@@ -315,9 +311,9 @@ export default function ApprovalRulesPage() {
       {loading ? (
         <p className="text-muted-foreground text-sm">Loading...</p>
       ) : rules.length === 0 ? (
-        <Card className="shadow-elevation-2 border-border/70">
+        <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-16 flex flex-col items-center text-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-surface flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-surface">
               <ShieldCheck className="w-6 h-6 text-muted-foreground" />
             </div>
             <div>
@@ -332,7 +328,7 @@ export default function ApprovalRulesPage() {
       ) : (
         <div className="space-y-3">
           {rules.map(rule => (
-            <Card key={rule.id} className="shadow-elevation-2 border-border/70 hover:shadow-elevation-3 transition-shadow duration-200">
+            <Card key={rule.id} className="border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-md">
               <CardContent className="p-5 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -376,7 +372,6 @@ export default function ApprovalRulesPage() {
           ))}
         </div>
       )}
-      </div>
-    </div>
+    </PageShell>
   )
 }

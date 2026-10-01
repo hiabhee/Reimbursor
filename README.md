@@ -21,6 +21,7 @@ Reimbursor automates the expense reimbursement process by providing:
 | Email | Nodemailer (SMTP) |
 | Monitoring | Sentry |
 | Validation | Zod |
+| AI | Groq API through the OpenAI-compatible SDK; Tesseract OCR for receipt text |
 
 ## User Roles
 
@@ -112,6 +113,16 @@ Reimbursor automates the expense reimbursement process by providing:
 - [x] **Deep Linking** - Click to navigate to expense
 - [x] **Mark as Read** - Individual or mark all
 
+### AI-assisted features
+
+AI is optional and disabled unless configured. AI output is advisory: it does not approve, reject, or submit expenses.
+
+- **Receipt extraction** - Scans receipt images with Tesseract OCR, then uses Groq to normalize merchant, amount, currency, date, and category. Shows confidence and warnings and falls back to deterministic parsing when AI is disabled or unavailable. Employees must review the fields before submitting.
+- **Expense review** - Managers and admins can request an AI validation or approval summary from a pending expense's detail page. Results use expense fields and approval history, are labeled advisory, and are stored in the AI review audit tables.
+- **Expense assistant** - `/assistant` answers general questions about using the app. It does not read company policy or live expense data.
+
+AI review limitations: validation is not backed by configured company policy rules; summaries do not inspect receipt evidence; assistant responses are general guidance. Treat results as suggestions and verify them before acting. There is no automated accuracy evaluation or test suite yet, so enable AI only for a controlled pilot until those controls exist.
+
 ### Editorial Enterprise Design System
 
 - [x] **Material 3-inspired surfaces** - Layered, tonal design
@@ -125,7 +136,7 @@ Reimbursor automates the expense reimbursement process by providing:
 - [x] **Timeline Component** - Visual approval flow
 - [x] **Smooth Transitions** - 200-300ms animations
 
-### Production Features
+### Engineering foundations (not a production-readiness claim)
 
 - [x] **Input Validation** - Zod schemas for all API endpoints
 - [x] **Error Boundaries** - Graceful error handling
@@ -144,6 +155,7 @@ src/
 │   │   │   ├── users/           # User management
 │   │   │   └── settings/        # Company settings
 │   │   ├── approvals/           # Manager approval page
+│   │   ├── assistant/           # General-purpose expense app assistant
 │   │   ├── dashboard/           # User dashboard
 │   │   ├── expenses/            # Expense list & detail
 │   │   │   ├── [id]/            # Expense detail page
@@ -162,6 +174,7 @@ src/
 │   │   ├── company/            # Company management
 │   │   ├── dashboard/          # Dashboard data
 │   │   ├── expenses/           # Expense CRUD & submit
+│   │   ├── ai/                 # Receipt extraction, expense review, assistant APIs
 │   │   ├── notifications/      # Notification management
 │   │   ├── users/              # User management
 │   │   └── workflow/           # Workflow management
@@ -240,6 +253,14 @@ src/
 | GET | `/api/approvals` | Get pending approvals |
 | POST | `/api/approvals` | Approve or reject expense |
 
+### AI (optional; requires server-side Groq configuration)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/ai/expenses/extract` | OCR and AI receipt extraction for a draft |
+| POST | `/api/ai/expenses/[id]/review` | Run `VALIDATION` or `APPROVAL_SUMMARY` for an expense (manager/admin) |
+| POST | `/api/ai/assistant` | General app usage assistant |
+
 ### Workflow
 
 | Method | Endpoint | Description |
@@ -268,6 +289,7 @@ src/
 - **Notification** - User notifications with idempotency
 - **Receipt** - Attached receipt files
 - **SendPasswordToken** - Password reset tokens
+- **AiExpenseReview**, **AiFinding**, **AiFeedback** - AI review results, findings, and feedback
 
 ### Indexes
 
@@ -300,10 +322,25 @@ SMTP_USER="user"
 SMTP_PASS="password"
 EMAIL_FROM="noreply@example.com"
 
+# Optional AI (Groq). Keep the API key server-side; never use NEXT_PUBLIC_ here.
+GROQ_API_KEY=""
+AI_ENABLED="true"
+AI_PROVIDER="groq"
+AI_DEFAULT_MODEL="openai/gpt-oss-120b"
+AI_EXPENSE_EXTRACTION_ENABLED="false"
+AI_EXPENSE_VALIDATION_ENABLED="false"
+AI_APPROVAL_SUMMARY_ENABLED="false"
+AI_ASSISTANT_ENABLED="false"
+AI_REQUEST_TIMEOUT_MS="45000"
+AI_MAX_RETRIES="2"
+AI_MAX_OUTPUT_TOKENS="2000"
+
 # Optional
 DEFAULT_COUNTRY="United States"
 NEXT_PUBLIC_SENTRY_DSN=""
 ```
+
+Create a local `.env.local` file for development and keep it out of version control. Set `GROQ_API_KEY` on the server and set `AI_ENABLED=true` plus the individual feature flags you want to use. Restart the server after changing environment variables. A missing API key, `AI_ENABLED=false`, or a disabled feature flag turns that feature off. Use your deployment platform's secret manager for production credentials.
 
 ## Getting Started
 
@@ -329,14 +366,9 @@ npx prisma db push
 npm run dev
 ```
 
-### Demo Users
+For production database changes, use the committed Prisma migrations (`npx prisma migrate deploy`) rather than `db push`. Back up the database before applying migrations. The repository currently has no automated test script or committed test suite; run `npm run build`, `npm run lint`, and `npx tsc --noEmit` as basic checks, then perform the manual checks in the AI section below.
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@demo.com | demo1234 |
-| Manager | manager@demo.com | demo1234 |
-| Employee | john@demo.com | demo1234 |
-| Employee | jane@demo.com | demo1234 |
+The checked-in seed script creates accounts with fixed development passwords. Review `prisma/seed.ts` before running it, and never run it against a production database. Create production accounts through the registration/admin flows and use unique credentials.
 
 ## Performance Optimizations
 
@@ -355,3 +387,19 @@ npm run dev
 - Input validation with Zod
 - SQL injection prevention (Prisma)
 - Idempotency keys for critical operations
+
+## AI smoke checks
+
+After configuring a development Groq key and enabling a feature, sign in and verify:
+
+1. Upload a clear receipt image and confirm extracted values are editable and remain a draft until submitted.
+2. Disable extraction or remove the API key and confirm receipt processing uses its fallback or reports the expected configuration state without silently submitting anything.
+3. As a manager/admin, run both AI review actions on a pending expense; confirm the output is advisory and that a human approval action is still required.
+4. As an employee, try the review endpoint and confirm it denies access. Try an expense from another company and confirm it is not returned.
+5. Ask a general app usage question at `/assistant`; confirm it states that it cannot see company policy or live expense data.
+
+These are manual smoke checks, not a substitute for automated authorization, workflow, and AI quality tests. Do not send real financial records to an external model until the company has approved the data handling and retention terms.
+
+## Production status
+
+This repository is a development/MVP foundation, not a production-certified expense platform. Before handling real financial data, add automated tests (especially tenant isolation and workflow transitions), shared/distributed rate limiting, production monitoring and alerting, backup/restore validation, operational migration procedures, and explicit data retention/privacy controls for receipt OCR and third-party AI processing. Validate security and deployment configuration in the target environment.

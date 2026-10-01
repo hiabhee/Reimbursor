@@ -91,7 +91,7 @@ export function DashboardContent({ company, showSetup, onShowSetupChange }: Prop
   const totalExpenses = data?.expenses?.length ?? data?.totalExpenses ?? 0
 
   const stats = [
-    { label: "Total Submitted", value: totalExpenses, icon: Receipt,      color: "#2563eb", bg: "#eff6ff" },
+    { label: "Total Submitted", value: totalExpenses, icon: Receipt,      color: "#526c43", bg: "#f0f4e6" },
     { label: "Pending Review",  value: data?.pendingCount ?? 0,  icon: Clock,        color: "#c2410c", bg: "#fff7ed" },
     { label: "Approved",        value: data?.approvedCount ?? 0, icon: CheckCircle2, color: "#15803d", bg: "#f0fdf4" },
     { label: "Rejected",        value: data?.rejectedCount ?? 0, icon: XCircle,      color: "#dc2626", bg: "#fef2f2" },

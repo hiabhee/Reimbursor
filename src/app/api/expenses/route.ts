@@ -3,6 +3,93 @@ import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/prisma"
 import { authOptions } from "@/lib/auth"
 import { expenseSchema } from "@/lib/validations"
+import { completeAiReview, recordAiFeedback, startAiReview } from "@/lib/ai/audit"
+import { hashInput } from "@/lib/ai/redaction"
+
+// Persist AI extraction output as an auditable review once the expense
+// exists (AiExpenseReview requires an expenseId). Records whether the
+// employee accepted or edited the AI suggestion.
+async function persistAiExtractionReview(args: {
+  expenseId: string
+  companyId: string
+  userId: string
+  extractionResult: unknown
+  submitted: Record<string, unknown>
+}) {
+  const result = args.extractionResult as {
+    source?: string
+    model?: string | null
+    confidence?: Record<string, number> | null
+    warnings?: string[] | null
+    merchant?: unknown
+    description?: unknown
+    amount?: unknown
+    currency?: unknown
+    date?: unknown
+    category?: unknown
+  } | null
+  if (!result || result.source !== "ai") return
+
+  const startedAt = Date.now()
+  let reviewId: string
+  try {
+    reviewId = await startAiReview({
+      expenseId: args.expenseId,
+      companyId: args.companyId,
+      feature: "EXTRACTION",
+      type: "EXTRACTION",
+      inputHash: hashInput(JSON.stringify(result)),
+    })
+  } catch {
+    return
+  }
+
+  const aiFields = {
+    merchant: result.merchant,
+    description: result.description,
+    amount: result.amount,
+    currency: result.currency,
+    date: result.date,
+    category: result.category,
+  }
+  await completeAiReview({
+    reviewId,
+    model: result.model ?? "unknown",
+    result: aiFields,
+    confidence:
+      result.confidence && typeof result.confidence === "object"
+        ? (result.confidence as Record<string, number>)
+        : null,
+    warnings: Array.isArray(result.warnings) ? result.warnings : null,
+    latencyMs: Date.now() - startedAt,
+  })
+
+  const suggestion: Record<string, unknown> = {
+    description: result.description ?? result.merchant,
+    merchant: result.merchant,
+    amount: result.amount,
+    currency: result.currency,
+    date: result.date,
+    category: result.category,
+  }
+  const changes: Record<string, { suggested: unknown; submitted: unknown }> = {}
+  for (const [key, suggested] of Object.entries(suggestion)) {
+    const submitted = args.submitted[key]
+    if (
+      submitted !== undefined &&
+      String(submitted ?? "") !== String(suggested ?? "")
+    ) {
+      changes[key] = { suggested, submitted }
+    }
+  }
+
+  await recordAiFeedback({
+    reviewId,
+    userId: args.userId,
+    decision: Object.keys(changes).length === 0 ? "ACCEPTED" : "EDITED",
+    changes: Object.keys(changes).length === 0 ? undefined : changes,
+  })
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -76,7 +163,22 @@ export async function POST(request: Request) {
       )
     }
 
-    const { description, category, date, submittedAmount, submittedCurrency, exchangeRate } = parsed.data
+    const { description, category, date, submittedAmount, submittedCurrency, exchangeRate, ocrExtractionId } = parsed.data
+
+    if (ocrExtractionId) {
+      const extraction = await prisma.ocrExtraction.findFirst({
+        where: {
+          id: ocrExtractionId,
+          companyId: session.user.companyId,
+          userId: session.user.id,
+          expenseId: null,
+        },
+        select: { id: true, result: true },
+      })
+      if (!extraction) {
+        return NextResponse.json({ error: "Invalid or expired OCR extraction" }, { status: 400 })
+      }
+    }
 
     const company = await prisma.company.findUnique({
       where: { id: session.user.companyId },
@@ -113,6 +215,26 @@ export async function POST(request: Request) {
           status: "DRAFT",
         },
       })
+      if (ocrExtractionId) {
+        const linked = await prisma.ocrExtraction.findUnique({
+          where: { id: ocrExtractionId },
+          select: { result: true },
+        })
+        await prisma.ocrExtraction.update({ where: { id: ocrExtractionId }, data: { expenseId: expense.id } })
+        await persistAiExtractionReview({
+          expenseId: expense.id,
+          companyId: freshUser.companyId,
+          userId: session.user.id,
+          extractionResult: linked?.result,
+          submitted: {
+            description,
+            amount: submittedAmount,
+            currency: submittedCurrency,
+            date,
+            category,
+          },
+        })
+      }
       return NextResponse.json(expense, { status: 201 })
     }
 
@@ -132,6 +254,27 @@ export async function POST(request: Request) {
         status: "DRAFT",
       },
     })
+
+    if (ocrExtractionId) {
+      const linked = await prisma.ocrExtraction.findUnique({
+        where: { id: ocrExtractionId },
+        select: { result: true },
+      })
+      await prisma.ocrExtraction.update({ where: { id: ocrExtractionId }, data: { expenseId: expense.id } })
+      await persistAiExtractionReview({
+        expenseId: expense.id,
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        extractionResult: linked?.result,
+        submitted: {
+          description,
+          amount: submittedAmount,
+          currency: submittedCurrency,
+          date,
+          category,
+        },
+      })
+    }
 
     return NextResponse.json(expense, { status: 201 })
   } catch (error) {

@@ -18,6 +18,8 @@ model Company {
   expenses          Expense[]
   approvalWorkflows ApprovalWorkflow[]
   approvalRules     ApprovalRule[]
+  ocrExtractions    OcrExtraction[]
+  aiExpenseReviews  AiExpenseReview[]
 }
 
 model User {
@@ -37,6 +39,7 @@ model User {
   expenses           Expense[]              @relation("EmployeeExpenses")
   approvalActions    ApprovalAction[]       @relation("ApproverActions")
   notifications      Notification[]
+  ocrExtractions     OcrExtraction[]
   overriddenExpenses Expense[]              @relation("AdminOverrides")
   sendPasswordTokens SendPasswordToken[]
   approvalSteps      ApprovalStep[]         @relation("StepApprover")
@@ -45,6 +48,7 @@ model User {
   assignedRules      ApprovalRule[]         @relation("AssignedRules")
   managedRules       ApprovalRule[]         @relation("ManagedRules")
   ruleApprovers      ApprovalRuleApprover[] @relation("RuleApprovers")
+  aiFeedback         AiFeedback[]
 
   @@unique([email, companyId])
 }
@@ -80,9 +84,32 @@ model Expense {
   adminOverrideAt      DateTime?
   adminOverrideComment String?
 
-  approvalActions ApprovalAction[]
-  receipt         Receipt?
-  notifications   Notification[]
+  approvalActions  ApprovalAction[]
+  receipt          Receipt?
+  notifications    Notification[]
+  ocrExtractions   OcrExtraction[]
+  aiExpenseReviews AiExpenseReview[]
+}
+
+model OcrExtraction {
+  id            String    @id @default(cuid())
+  companyId     String
+  userId        String
+  expenseId     String?
+  status        String    @default("COMPLETE")
+  rawText       String    @db.Text
+  result        Json
+  parserVersion String
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+
+  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([expenseId])
 }
 
 enum ExpenseCategory {
@@ -210,14 +237,15 @@ enum ActionStatus {
 }
 
 model Receipt {
-  id        String   @id @default(cuid())
-  expenseId String   @unique
-  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  url       String
-  filename  String
-  mimeType  String?
-  size      Int?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  expenseId  String   @unique
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  url        String
+  storageKey String?
+  filename   String
+  mimeType   String?
+  size       Int?
+  createdAt  DateTime @default(now())
 }
 
 model Notification {
@@ -271,4 +299,86 @@ model ChatMessage {
 
   sender   User @relation("SentMessages", fields: [senderId], references: [id])
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+enum AiReviewType {
+  EXTRACTION
+  VALIDATION
+  SUMMARY
+}
+
+enum AiReviewStatus {
+  PENDING
+  COMPLETE
+  FAILED
+}
+
+enum AiFindingSeverity {
+  INFO
+  WARNING
+  BLOCKING
+}
+
+enum AiFeedbackDecision {
+  ACCEPTED
+  EDITED
+  DISMISSED
+}
+
+model AiExpenseReview {
+  id            String         @id @default(cuid())
+  expenseId     String
+  companyId     String
+  type          AiReviewType   @default(EXTRACTION)
+  status        AiReviewStatus @default(PENDING)
+  provider      String?
+  model         String?
+  promptVersion String?
+  inputHash     String?
+  result        Json?
+  confidence    Json?
+  warnings      Json?
+  error         String?
+  latencyMs     Int?
+  createdAt     DateTime       @default(now())
+  completedAt   DateTime?
+
+  expense  Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  findings AiFinding[]
+  feedback AiFeedback[]
+
+  @@index([companyId, createdAt])
+  @@index([expenseId, type])
+}
+
+model AiFinding {
+  id         String            @id @default(cuid())
+  reviewId   String
+  code       String
+  severity   AiFindingSeverity @default(INFO)
+  message    String
+  evidence   String?
+  confidence Float?
+  resolved   Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+
+  review AiExpenseReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, severity])
+}
+
+model AiFeedback {
+  id        String             @id @default(cuid())
+  reviewId  String
+  userId    String
+  decision  AiFeedbackDecision
+  changes   Json?
+  createdAt DateTime           @default(now())
+
+  review AiExpenseReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, createdAt])
+  @@index([userId, createdAt])
 }

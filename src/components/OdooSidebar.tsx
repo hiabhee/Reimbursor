@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import {
-  LayoutDashboard, Receipt, CheckSquare, Settings,
+  LayoutDashboard, Receipt, CheckSquare, Settings, Bot,
   FileText, Users, Workflow, ChevronRight,
 } from "lucide-react"
 
@@ -18,6 +18,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard",       label: "Dashboard",    icon: LayoutDashboard },
   { href: "/expenses",        label: "Expenses",     icon: Receipt },
+  { href: "/assistant",       label: "Expense Assistant", icon: Bot },
   { href: "/approvals",       label: "Approvals",    icon: CheckSquare,  roles: ["MANAGER", "ADMIN"] },
   { href: "/admin/expenses",  label: "All Expenses", icon: FileText,     roles: ["ADMIN"], section: "Admin" },
   { href: "/admin/users",     label: "Users",        icon: Users,        roles: ["ADMIN"], section: "Admin" },

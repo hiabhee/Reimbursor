@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/formatCurrency"
 import { SubmitExpenseButton } from "@/components/SubmitExpenseButton"
 import { ResubmitExpenseButton } from "@/components/ResubmitExpenseButton"
 import { WorkflowTimeline } from "@/components/WorkflowTimeline"
+import { AiExpenseReview } from "@/components/AiExpenseReview"
 import { AlertTriangle, Clock, CheckCircle2, XCircle } from "lucide-react"
 
 export default async function ExpenseDetailPage({
@@ -134,6 +135,10 @@ export default async function ExpenseDetailPage({
         </div>
       </div>
       <div className="flex-1 overflow-auto p-4 max-w-4xl space-y-4">
+
+      {(session.user.role === "ADMIN" || session.user.role === "MANAGER") && expense.status === "PENDING" && (
+        <AiExpenseReview expenseId={expense.id} />
+      )}
 
       {expense.isAdminOverride && (
         <div className="flex items-start gap-3 rounded border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 text-[12px]">

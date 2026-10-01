@@ -92,7 +92,7 @@ export function EnterpriseTable<T>({
 
   if (loading) {
     return (
-      <div className={cn("border border-border rounded-md overflow-hidden bg-card", className)}>
+      <div className={cn("border border-border rounded-lg overflow-hidden bg-card", className)}>
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex items-center gap-3 px-3 py-2.5 border-b border-border last:border-0 animate-pulse">
             <div className="h-3 bg-muted rounded w-1/4" />
@@ -106,8 +106,8 @@ export function EnterpriseTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className={cn("border border-border rounded-md bg-card", className)}>
-        <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
+      <div className={cn("border border-border rounded-lg bg-card", className)}>
+          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center text-muted-foreground">
           {emptyIcon && <div className="opacity-40 mb-1">{emptyIcon}</div>}
           <p className="text-sm">{emptyMessage}</p>
         </div>
@@ -116,7 +116,7 @@ export function EnterpriseTable<T>({
   }
 
   return (
-    <div className={cn("border border-border rounded-md overflow-hidden bg-card", className)}>
+    <div className={cn("border border-border rounded-lg overflow-hidden bg-card", className)}>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
@@ -125,7 +125,7 @@ export function EnterpriseTable<T>({
               stickyHeader && "thead-sticky"
             )}>
               {selectable && (
-                <th className="w-9 px-3 py-2.5 text-left">
+                  <th className="w-12 px-5 py-4 text-left">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -139,7 +139,7 @@ export function EnterpriseTable<T>({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-3 py-2.5 font-semibold text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap select-none",
+                    "px-5 py-4 font-semibold text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap select-none",
                     alignClass(col.align),
                     col.sortable && "cursor-pointer hover:text-foreground transition-colors",
                     col.headerClassName
@@ -181,7 +181,7 @@ export function EnterpriseTable<T>({
                 >
                   {selectable && (
                     <td
-                      className="w-9 px-3 py-2.5"
+                      className="w-12 px-5 py-4"
                       onClick={(e) => { e.stopPropagation(); toggleRow(key) }}
                     >
                       <input
@@ -196,7 +196,7 @@ export function EnterpriseTable<T>({
                     <td
                       key={col.key}
                       className={cn(
-                        "px-3 py-2.5 align-middle",
+                        "px-5 py-4 align-middle",
                         alignClass(col.align),
                         col.className
                       )}
@@ -206,7 +206,7 @@ export function EnterpriseTable<T>({
                   ))}
                   {rowActions && (
                     <td
-                      className="px-2 py-2.5 text-right"
+                      className="px-4 py-4 text-right"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="row-actions flex items-center justify-end gap-0.5">

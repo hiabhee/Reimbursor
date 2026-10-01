@@ -9,6 +9,7 @@ export const expenseSchema = z.object({
   submittedAmount: z.number().positive("Amount must be positive").max(1000000, "Amount too large"),
   submittedCurrency: z.string().length(3, "Currency must be 3 characters"),
   exchangeRate: z.number().positive("Exchange rate must be positive").max(10000, "Exchange rate too high"),
+  ocrExtractionId: z.string().cuid().optional(),
 })
 
 export const signupSchema = z.object({

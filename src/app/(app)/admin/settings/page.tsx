@@ -4,6 +4,7 @@ import Link from "next/link"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Building2, Bell, Shield, Workflow, ChevronRight } from "lucide-react"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 
 export default async function AdminSettingsPage() {
   const session = await getServerSession(authOptions)
@@ -20,19 +21,19 @@ export default async function AdminSettingsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="o-breadcrumb">
-        <span className="text-gray-400 text-[12px]">Admin</span>
-        <span className="text-gray-300 mx-1">/</span>
-        <span className="text-[13px] font-semibold text-gray-800">Settings</span>
-      </div>
-      <div className="flex-1 overflow-auto p-4 space-y-4 max-w-3xl">
+    <PageShell>
+      <div className="max-w-3xl space-y-5">
+        <PageIntro
+          eyebrow="Administration"
+          title="Settings"
+          description="Manage workspace configuration and administrative tools."
+        />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {settings.map((s) => {
             const Icon = s.icon
             return (
-              <Link key={s.title} href={s.href} className="o-container p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <Link key={s.title} href={s.href} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:bg-slate-50">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-blue-50">
                   <Icon className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -47,22 +48,22 @@ export default async function AdminSettingsPage() {
           })}
         </div>
 
-        <div className="o-container overflow-hidden">
-          <div className="px-3 py-2 border-b" style={{ borderColor: "#dcdcdc", background: "#f7f7f7" }}>
-            <span className="text-[12px] font-semibold text-gray-700">Company Information</span>
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+            <span className="text-sm font-semibold text-slate-800">Company Information</span>
           </div>
           {[
             { label: "Company Name",    value: company?.name || "Not set" },
             { label: "Default Currency", value: company?.currency || "USD" },
             { label: "Company ID",      value: company?.id.slice(0, 8) + "..." },
           ].map((row) => (
-            <div key={row.label} className="flex justify-between items-center px-3 py-2.5 border-b last:border-0" style={{ borderColor: "#ebebeb" }}>
-              <span className="text-[12px] text-gray-500">{row.label}</span>
-              <span className="text-[13px] font-medium text-gray-900">{row.value}</span>
+            <div key={row.label} className="flex items-center justify-between border-b border-slate-100 px-5 py-4 last:border-0">
+              <span className="text-sm text-slate-500">{row.label}</span>
+              <span className="text-sm font-medium text-slate-900">{row.value}</span>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCw } from "lucide-react"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 
 const TABLES = [
   { key: "users", label: "Users" },
@@ -47,23 +48,18 @@ export default function DbViewerPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="o-breadcrumb">
-        <span className="text-gray-400 text-[12px]">Admin</span>
-        <span className="text-gray-300 mx-1">/</span>
-        <span className="text-[13px] font-semibold text-gray-800">Database Viewer</span>
-      </div>
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Database Viewer</h1>
-            <p className="text-muted-foreground text-sm">Live view of your company data</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => fetchTable(activeTable)} disabled={loading}>
+    <PageShell>
+        <PageIntro
+          eyebrow="Administration"
+          title="Database Viewer"
+          description="Live view of your company data."
+          actions={
+            <Button variant="outline" className="h-10 gap-2 px-4" onClick={() => fetchTable(activeTable)} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
-          </Button>
-        </div>
+            </Button>
+          }
+        />
 
       {/* Table tabs */}
       <div className="flex gap-2 flex-wrap">
@@ -116,7 +112,6 @@ export default function DbViewerPage() {
           </tbody>
         </table>
       </div>
-      </div>
-    </div>
+    </PageShell>
   )
 }

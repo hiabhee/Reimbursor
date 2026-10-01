@@ -8,6 +8,7 @@ import { EnterpriseToolbar } from "@/components/ui/enterprise-toolbar"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { StatusPill } from "@/components/ui/status-pill"
 import { cn } from "@/lib/utils"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 import {
   CheckCircle2,
   XCircle,
@@ -177,7 +178,7 @@ export function ApprovalTable({ approvals, companyCurrency }: ApprovalTableProps
         type="button"
         title="View"
         onClick={() => router.push(`/expenses/${e.id}`)}
-        className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
       >
         <Eye className="w-3.5 h-3.5" />
       </button>
@@ -186,7 +187,7 @@ export function ApprovalTable({ approvals, companyCurrency }: ApprovalTableProps
         title="Approve"
         disabled={acting === e.id}
         onClick={() => handleAction(e.id, "APPROVED")}
-        className="h-6 w-6 flex items-center justify-center rounded hover:bg-emerald-50 text-muted-foreground hover:text-emerald-600 transition-colors disabled:opacity-40"
+        className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-emerald-50 text-muted-foreground hover:text-emerald-600 transition-colors disabled:opacity-40"
       >
         <Check className="w-3.5 h-3.5" />
       </button>
@@ -195,7 +196,7 @@ export function ApprovalTable({ approvals, companyCurrency }: ApprovalTableProps
         title="Reject"
         disabled={acting === e.id}
         onClick={() => handleAction(e.id, "REJECTED")}
-        className="h-6 w-6 flex items-center justify-center rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors disabled:opacity-40"
+        className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors disabled:opacity-40"
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -203,37 +204,34 @@ export function ApprovalTable({ approvals, companyCurrency }: ApprovalTableProps
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <PageShell>
       {/* Page header */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h1 className="text-[15px] font-semibold text-foreground">Pending Approvals</h1>
-          <p className="text-[12px] text-muted-foreground">
-            {approvals.length} request{approvals.length !== 1 ? "s" : ""} awaiting review
-          </p>
-        </div>
-        {approvals.length > 0 && (
-          <div className="flex items-center gap-1.5">
+      <PageIntro
+        eyebrow="Manager workspace"
+        title="Pending Approvals"
+        description={`${approvals.length} request${approvals.length !== 1 ? "s" : ""} awaiting review`}
+        actions={approvals.length > 0 ? (
+          <>
             <button
               type="button"
               onClick={handleBulkApprove}
-              className="h-7 px-2.5 text-[12px] rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1 font-medium transition-colors"
+              className="flex h-10 items-center gap-2 rounded-md border border-emerald-200 bg-white px-4 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Approve All
+              <CheckCircle2 className="h-4 w-4" /> Approve All
             </button>
             <button
               type="button"
               onClick={handleBulkReject}
-              className="h-7 px-2.5 text-[12px] rounded border border-red-200 text-red-700 hover:bg-red-50 flex items-center gap-1 font-medium transition-colors"
+              className="flex h-10 items-center gap-2 rounded-md border border-red-200 bg-white px-4 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
             >
-              <XCircle className="w-3.5 h-3.5" /> Reject All
+              <XCircle className="h-4 w-4" /> Reject All
             </button>
-          </div>
-        )}
-      </div>
+          </>
+        ) : undefined}
+      />
 
       {/* Table container */}
-      <div className="border border-border rounded-md overflow-hidden flex flex-col">
+      <div className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <EnterpriseToolbar
           search={search}
           onSearchChange={(v) => { setSearch(v); setPage(1) }}
@@ -244,14 +242,14 @@ export function ApprovalTable({ approvals, companyCurrency }: ApprovalTableProps
               <button
                 type="button"
                 onClick={handleBulkApprove}
-                className="h-6 px-2 text-[12px] rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1"
+                className="h-6 px-2 text-[12px] rounded-md border border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1"
               >
                 <Check className="w-3 h-3" /> Approve
               </button>
               <button
                 type="button"
                 onClick={handleBulkReject}
-                className="h-6 px-2 text-[12px] rounded border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
+                className="h-6 px-2 text-[12px] rounded-md border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
               >
                 <X className="w-3 h-3" /> Reject
               </button>
@@ -272,13 +270,13 @@ export function ApprovalTable({ approvals, companyCurrency }: ApprovalTableProps
           className="border-0 rounded-none"
         />
 
-        <TablePagination
+      <TablePagination
           page={page}
           pageSize={PAGE_SIZE}
           total={filtered.length}
           onPageChange={setPage}
         />
       </div>
-    </div>
+    </PageShell>
   )
 }

@@ -5,6 +5,22 @@ import { prisma } from "@/lib/prisma"
 import { writeFile, mkdir } from "fs/promises"
 import { join } from "path"
 import { randomUUID } from "crypto"
+import { extensionForMimeType, readReceiptFile, RECEIPT_FILE_TYPES } from "@/lib/receiptFiles"
+
+async function getAuthorizedExpense(id: string, session: { user: { id: string; companyId: string; role: string } }) {
+  const expense = await prisma.expense.findFirst({
+    where: { id, companyId: session.user.companyId },
+    include: { employee: { select: { managerId: true } } },
+  })
+  if (!expense) return null
+
+  const canAccess =
+    session.user.role === "ADMIN" ||
+    expense.employeeId === session.user.id ||
+    (session.user.role === "MANAGER" && expense.employee.managerId === session.user.id)
+
+  return canAccess ? expense : false
+}
 
 export async function POST(
   request: Request,
@@ -13,48 +29,36 @@ export async function POST(
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const expense = await prisma.expense.findFirst({
-    where: { id: params.id, companyId: session.user.companyId },
-  })
-
-  if (!expense) return NextResponse.json({ error: "Expense not found" }, { status: 404 })
-  if (expense.employeeId !== session.user.id && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
+  const expense = await getAuthorizedExpense(params.id, session)
+  if (expense === null) return NextResponse.json({ error: "Expense not found" }, { status: 404 })
+  if (expense === false) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   try {
     const formData = await request.formData()
     const file = formData.get("file") as File | null
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 })
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 })
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 })
-    }
-
-    const ext      = file.name.split(".").pop() ?? "jpg"
-    const filename = `${randomUUID()}.${ext}`
-    const uploadDir = join(process.cwd(), "public", "uploads", "receipts")
+    const { buffer, mimeType } = await readReceiptFile(file, RECEIPT_FILE_TYPES)
+    const storageKey = `${randomUUID()}.${extensionForMimeType(mimeType)}`
+    const uploadDir = process.env.RECEIPT_STORAGE_DIR || join(process.cwd(), ".data", "receipts")
 
     await mkdir(uploadDir, { recursive: true })
-    const bytes = await file.arrayBuffer()
-    await writeFile(join(uploadDir, filename), Buffer.from(bytes))
+    await writeFile(join(uploadDir, storageKey), buffer)
 
-    const url = `/uploads/receipts/${filename}`
+    const url = `/api/expenses/${params.id}/receipt/file`
 
     // Upsert receipt record
     const receipt = await prisma.receipt.upsert({
       where:  { expenseId: params.id },
-      update: { url, filename: file.name, mimeType: file.type, size: file.size },
-      create: { expenseId: params.id, url, filename: file.name, mimeType: file.type, size: file.size },
+      update: { url, storageKey, filename: file.name, mimeType, size: file.size },
+      create: { expenseId: params.id, url, storageKey, filename: file.name, mimeType, size: file.size },
     })
 
     return NextResponse.json(receipt, { status: 201 })
   } catch (error) {
+    if (error instanceof Error && (error.message.includes("Unsupported") || error.message.includes("File"))) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     console.error("Receipt upload error:", error)
     return NextResponse.json({ error: "Upload failed" }, { status: 500 })
   }
@@ -67,9 +71,11 @@ export async function GET(
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const receipt = await prisma.receipt.findUnique({
-    where: { expenseId: params.id },
-  })
+  const expense = await getAuthorizedExpense(params.id, session)
+  if (expense === null) return NextResponse.json({ error: "Expense not found" }, { status: 404 })
+  if (expense === false) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  const receipt = await prisma.receipt.findUnique({ where: { expenseId: params.id } })
 
   if (!receipt) return NextResponse.json(null)
   return NextResponse.json(receipt)

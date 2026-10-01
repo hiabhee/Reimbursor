@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { StepBuilder, WorkflowStep, User } from '@/components/workflow-builder'
+import { PageIntro, PageShell } from '@/components/ui/page-shell'
 
 export default function WorkflowBuilderPage() {
   const [steps, setSteps] = useState<WorkflowStep[]>([])
@@ -66,31 +67,22 @@ export default function WorkflowBuilderPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <PageShell className="flex items-center justify-center">
         <div className="text-muted-foreground text-sm">Loading workflow...</div>
-      </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="o-breadcrumb">
-        <span className="text-gray-400 text-[12px]">Admin</span>
-        <span className="text-gray-300 mx-1">/</span>
-        <span className="text-[13px] font-semibold text-gray-800">Approval Workflow</span>
+    <PageShell>
+      <div className="max-w-3xl space-y-6">
+        <PageIntro
+          eyebrow="Administration"
+          title="Approval Workflow"
+          description="Configure how expense approvals flow through your organization."
+        />
+        <StepBuilder users={users} onSave={handleSave} initialSteps={steps} />
       </div>
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-6 max-w-3xl">
-          <div>
-            <h1 className="text-page-title">Approval Workflow</h1>
-            <p className="text-body-muted mt-1">
-              Configure how expense approvals flow through your organization.
-            </p>
-          </div>
-
-          <StepBuilder users={users} onSave={handleSave} initialSteps={steps} />
-        </div>
-      </div>
-    </div>
+    </PageShell>
   )
 }

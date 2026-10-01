@@ -126,6 +126,10 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
+        aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+        aria-expanded={showDropdown}
+        aria-haspopup="menu"
         onClick={() => setShowDropdown(!showDropdown)}
         className={cn(
           "relative p-2.5 rounded-xl transition-all duration-200",

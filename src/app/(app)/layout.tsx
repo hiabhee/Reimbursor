@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#f0f0f0" }}>
+    <div className="app-shell flex flex-col min-h-screen" style={{ background: "#fbfcf8" }}>
       {/* Global topbar */}
       <OdooTopbar />
 
@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <OdooSidebar userRole={session?.user?.role} />
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {children}
         </main>
       </div>

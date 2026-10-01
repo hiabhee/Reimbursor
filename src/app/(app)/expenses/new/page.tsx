@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Upload, Loader2, ScanLine, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react"
 
 const CATEGORIES = [
@@ -28,6 +29,37 @@ interface FormData {
   exchangeRate: string
 }
 
+interface AiMeta {
+  confidence: Record<string, number> | null
+  warnings: string[]
+  source: string | null
+  model: string | null
+}
+
+function ConfidenceBadge({ value, edited }: { value: number | null | undefined; edited: boolean }) {
+  if (edited) {
+    return (
+      <span className="ml-1.5 inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-1.5 py-px text-[10px] font-medium text-gray-500">
+        Edited
+      </span>
+    )
+  }
+  if (value == null) return null
+  const pct = Math.round(value * 100)
+  const style =
+    value >= 0.85
+      ? "border-green-200 bg-green-50 text-green-700"
+      : value >= 0.6
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-red-200 bg-red-50 text-red-600"
+  const label = value >= 0.85 ? `AI ${pct}%` : value >= 0.6 ? `Check ${pct}%` : `Low ${pct}%`
+  return (
+    <span className={`ml-1.5 inline-flex items-center rounded-full border px-1.5 py-px text-[10px] font-medium ${style}`}>
+      {label}
+    </span>
+  )
+}
+
 export default function NewExpensePage() {
   const router = useRouter()
 
@@ -47,9 +79,19 @@ export default function NewExpensePage() {
   const [ocrLoading, setOcrLoading]           = useState(false)
   const [ocrError, setOcrError]               = useState("")
   const [ocrSuccess, setOcrSuccess]           = useState(false)
+  const [ocrExtractionId, setOcrExtractionId] = useState<string | null>(null)
+  const [aiMeta, setAiMeta] = useState<AiMeta>({ confidence: null, warnings: [], source: null, model: null })
+  const [editedFields, setEditedFields] = useState<Set<string>>(new Set())
+  const [receiptUploadError, setReceiptUploadError] = useState("")
   const [receiptFile, setReceiptFile]         = useState<File | null>(null)
   const [receiptPreview, setReceiptPreview]   = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    return () => {
+      if (receiptPreview) URL.revokeObjectURL(receiptPreview)
+    }
+  }, [receiptPreview])
 
   useEffect(() => {
     fetch("/api/expenses")
@@ -92,27 +134,82 @@ export default function NewExpensePage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setReceiptFile(file); setOcrError(""); setOcrSuccess(false)
+    setReceiptFile(file); setOcrError(""); setOcrSuccess(false); setOcrExtractionId(null); setReceiptUploadError("")
+    setAiMeta({ confidence: null, warnings: [], source: null, model: null })
+    setEditedFields(new Set())
     setReceiptPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null)
+  }
+
+  function applyExtraction(data: {
+    description?: string | null
+    merchant?: string | null
+    category?: string | null
+    date?: string | null
+    amount?: number | null
+    currency?: string | null
+    confidence?: Record<string, number> | null
+    warnings?: string[]
+    source?: string | null
+    model?: string | null
+    extractionId?: string | null
+  }) {
+    setForm((f) => ({
+      ...f,
+      description:       data.description ?? data.merchant ?? f.description,
+      category:          data.category    ?? f.category,
+      date:              data.date        ?? f.date,
+      submittedAmount:   data.amount != null ? String(data.amount) : f.submittedAmount,
+      submittedCurrency: data.currency    ?? f.submittedCurrency,
+    }))
+    setAiMeta({
+      confidence: data.confidence ?? null,
+      warnings: data.warnings ?? [],
+      source: data.source ?? null,
+      model: data.model ?? null,
+    })
+    setEditedFields(new Set())
+    setOcrExtractionId(data.extractionId ?? null)
+    setOcrSuccess(true)
   }
 
   async function handleOCR() {
     if (!receiptFile) return
+    if (!receiptFile.type.startsWith("image/")) {
+      setOcrError("Only image receipts can be scanned. The file can still be attached to the expense.")
+      return
+    }
     setOcrLoading(true); setOcrError(""); setOcrSuccess(false)
     try {
       const fd = new FormData(); fd.append("file", receiptFile)
-      const res = await fetch("/api/ocr", { method: "POST", body: fd })
-      const data = await res.json()
-      if (!res.ok) { setOcrError(data.error || "OCR failed"); return }
-      setForm((f) => ({
-        ...f,
-        description:       data.description ?? f.description,
-        category:          data.category    ?? f.category,
-        date:              data.date        ?? f.date,
-        submittedAmount:   data.amount != null ? String(data.amount) : f.submittedAmount,
-        submittedCurrency: data.currency    ?? f.submittedCurrency,
-      }))
-      setOcrSuccess(true)
+      // Phase 1 AI route: OCR + AI normalization + confidence. Falls back
+      // to deterministic parsing inside the route when AI is disabled/down.
+      let data: {
+        description?: string | null
+        merchant?: string | null
+        category?: string | null
+        date?: string | null
+        amount?: number | null
+        currency?: string | null
+        confidence?: Record<string, number> | null
+        warnings?: string[]
+        source?: string | null
+        model?: string | null
+        extractionId?: string | null
+        error?: string
+      } | null = null
+      try {
+        const res = await fetch("/api/ai/expenses/extract", { method: "POST", body: fd })
+        data = await res.json()
+        if (res.status === 429) { setOcrError(data?.error || "Too many AI requests"); return }
+        if (!res.ok || !data) throw new Error(data?.error || "AI extraction failed")
+      } catch {
+        // Legacy OCR fallback (pre-AI behavior)
+        const res = await fetch("/api/ocr", { method: "POST", body: fd })
+        data = await res.json()
+        if (!res.ok) { setOcrError(data?.error || "OCR failed"); return }
+      }
+      if (!data) { setOcrError("OCR failed"); return }
+      applyExtraction(data)
     } catch { setOcrError("OCR request failed") }
     finally { setOcrLoading(false) }
   }
@@ -131,31 +228,42 @@ export default function NewExpensePage() {
           submittedAmount: parseFloat(form.submittedAmount),
           submittedCurrency: form.submittedCurrency,
           exchangeRate: parseFloat(form.exchangeRate),
+          ocrExtractionId: ocrExtractionId ?? undefined,
         }),
       })
       if (!res.ok) { const d = await res.json(); setError(d.error || "Failed"); setLoading(false); return }
       const expense = await res.json()
       if (receiptFile && expense.id) {
         const fd = new FormData(); fd.append("file", receiptFile)
-        await fetch(`/api/expenses/${expense.id}/receipt`, { method: "POST", body: fd }).catch(() => null)
+        const receiptRes = await fetch(`/api/expenses/${expense.id}/receipt`, { method: "POST", body: fd })
+        if (!receiptRes.ok) {
+          setReceiptUploadError("Expense created, but the receipt could not be uploaded. Please try again from the expense details page.")
+          setLoading(false)
+          return
+        }
       }
       router.push("/expenses")
     } catch { setError("An error occurred."); setLoading(false) }
   }
 
-  const set = (k: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((f) => ({ ...f, [k]: e.target.value }))
+    // Track manual corrections to AI suggestions (plan §4: "Manually edited").
+    if (aiMeta.confidence) {
+      setEditedFields((prev) => new Set(prev).add(k))
+    }
+  }
+
+  const conf = aiMeta.confidence
+  const isEdited = (k: keyof FormData) => editedFields.has(k)
 
   return (
     <div className="flex flex-col h-full">
       {/* Breadcrumb */}
       <div className="o-breadcrumb">
-        <span
-          className="text-[12px] text-blue-600 hover:underline cursor-pointer"
-          onClick={() => router.push("/expenses")}
-        >
+        <Link href="/expenses" className="text-[12px] text-blue-600 hover:underline">
           Expenses
-        </span>
+        </Link>
         <span className="text-gray-300 mx-1">/</span>
         <span className="text-[13px] font-semibold text-gray-800">New Expense</span>
       </div>
@@ -181,7 +289,16 @@ export default function NewExpensePage() {
                   <img src={receiptPreview} alt="Receipt" className="w-16 h-16 object-cover rounded border" style={{ borderColor: "#dcdcdc" }} />
                   <button
                     type="button"
-                    onClick={() => { setReceiptFile(null); setReceiptPreview(null); setOcrSuccess(false) }}
+                    aria-label="Remove receipt"
+                    onClick={() => {
+                      setReceiptFile(null)
+                      setReceiptPreview(null)
+                      setOcrSuccess(false)
+                      setOcrExtractionId(null)
+                      setAiMeta({ confidence: null, warnings: [], source: null, model: null })
+                      setEditedFields(new Set())
+                      if (fileInputRef.current) fileInputRef.current.value = ""
+                    }}
                     className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center leading-none"
                   >×</button>
                 </div>
@@ -209,10 +326,10 @@ export default function NewExpensePage() {
                       type="button"
                       className="o-toolbar-btn o-toolbar-btn-primary"
                       onClick={handleOCR}
-                      disabled={ocrLoading}
+                        disabled={ocrLoading || !receiptFile.type.startsWith("image/")}
                     >
                       {ocrLoading
-                        ? <><Loader2 className="w-3 h-3 animate-spin" /> Scanning...</>
+                        ? <><Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> Scanning…</>
                         : <><ScanLine className="w-3 h-3" /> Scan Receipt</>}
                     </button>
                   )}
@@ -223,18 +340,40 @@ export default function NewExpensePage() {
                 </div>
 
                 {ocrError && (
-                  <p className="text-[11px] text-red-600 mt-1.5 flex items-center gap-1">
+                  <p role="alert" aria-live="polite" className="text-[11px] text-red-600 mt-1.5 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" /> {ocrError}
                   </p>
                 )}
                 {ocrSuccess && (
-                  <p className="text-[11px] text-green-600 mt-1.5 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Fields auto-filled from receipt
+                  <p role="status" aria-live="polite" className="text-[11px] text-green-600 mt-1.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {aiMeta.source === "ai"
+                      ? "AI extracted fields — please review and confirm"
+                      : "Fields auto-filled from receipt — please review"}
+                  </p>
+                )}
+                {ocrSuccess && aiMeta.source && aiMeta.source !== "ai" && (
+                  <p className="text-[11px] text-amber-600 mt-1">
+                    OCR fallback mode — verify each field carefully.
+                  </p>
+                )}
+                {ocrSuccess && aiMeta.warnings.length > 0 && (
+                  <ul className="mt-1.5 space-y-1">
+                    {aiMeta.warnings.map((w, i) => (
+                      <li key={i} className="text-[11px] text-amber-700 flex items-start gap-1">
+                        <AlertCircle className="w-3 h-3 mt-px shrink-0" /> {w}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {receiptUploadError && (
+                  <p role="alert" aria-live="polite" className="text-[11px] text-red-600 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {receiptUploadError}
                   </p>
                 )}
               </div>
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,application/pdf" className="hidden" onChange={handleFileChange} />
           </div>
 
           {/* Form */}
@@ -253,7 +392,10 @@ export default function NewExpensePage() {
               <div className="p-3 space-y-3">
                 {/* Description */}
                 <div>
-                  <label className="o-field-label">Description *</label>
+                  <label className="o-field-label">
+                    Description *
+                    <ConfidenceBadge value={conf?.merchant} edited={isEdited("description")} />
+                  </label>
                   <input
                     className="o-input"
                     placeholder="Business lunch with client"
@@ -267,7 +409,10 @@ export default function NewExpensePage() {
                 {/* Category + Date */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="o-field-label">Category *</label>
+                    <label className="o-field-label">
+                      Category *
+                      <ConfidenceBadge value={conf?.category} edited={isEdited("category")} />
+                    </label>
                     <select className="o-input" value={form.category} onChange={set("category")}>
                       {CATEGORIES.map((c) => (
                         <option key={c.value} value={c.value}>{c.label}</option>
@@ -275,7 +420,10 @@ export default function NewExpensePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="o-field-label">Date *</label>
+                    <label className="o-field-label">
+                      Date *
+                      <ConfidenceBadge value={conf?.date} edited={isEdited("date")} />
+                    </label>
                     <input type="date" className="o-input" value={form.date} onChange={set("date")} required />
                   </div>
                 </div>
@@ -283,7 +431,10 @@ export default function NewExpensePage() {
                 {/* Amount + Currency */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="o-field-label">Amount *</label>
+                    <label className="o-field-label">
+                      Amount *
+                      <ConfidenceBadge value={conf?.amount} edited={isEdited("submittedAmount")} />
+                    </label>
                     <input
                       type="number" step="0.01" min="0.01"
                       className="o-input" placeholder="100.00"
@@ -291,7 +442,10 @@ export default function NewExpensePage() {
                     />
                   </div>
                   <div>
-                    <label className="o-field-label">Currency *</label>
+                    <label className="o-field-label">
+                      Currency *
+                      <ConfidenceBadge value={conf?.currency} edited={isEdited("submittedCurrency")} />
+                    </label>
                     <select className="o-input" value={form.submittedCurrency} onChange={set("submittedCurrency")}>
                       {currencies.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>

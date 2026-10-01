@@ -22,7 +22,7 @@ export function TablePagination({ page, pageSize, total, onPageChange, className
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "h-6 w-6 flex items-center justify-center rounded border border-border text-[12px] transition-colors",
+        "h-6 w-6 flex items-center justify-center rounded-md border border-border text-[12px] transition-colors",
         disabled
           ? "opacity-40 cursor-not-allowed"
           : "hover:bg-muted cursor-pointer"

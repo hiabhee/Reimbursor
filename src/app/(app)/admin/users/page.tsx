@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { PageHeader, Section } from "@/components/ui/page-header"
+import { Section } from "@/components/ui/page-header"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 import { EmptyState } from "@/components/ui/empty-state"
 import { cn } from "@/lib/utils"
 import { Users, Shield, UserCheck, User as UserIcon, Plus, Pencil, Trash2, Send } from "lucide-react"
@@ -200,29 +201,24 @@ export default function AdminUsersPage() {
   )
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="o-breadcrumb">
-        <span className="text-gray-400 text-[12px]">Admin</span>
-        <span className="text-gray-300 mx-1">/</span>
-        <span className="text-[13px] font-semibold text-gray-800">User Management</span>
-      </div>
-      <div className="flex-1 overflow-auto p-4 space-y-6">
-        <PageHeader
-          title="User Management"
-          description="Manage employees, managers, and admin roles"
-          action={
-            <Button size="sm" onClick={openCreate} className="gap-1.5">
-              <Plus className="w-4 h-4" /> Add User
-            </Button>
-          }
-        />
+    <PageShell>
+      <PageIntro
+        eyebrow="Administration"
+        title="User Management"
+        description="Manage employees, managers, and admin roles."
+        actions={
+          <Button className="h-10 gap-2 px-4" onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Add User
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.label} className="shadow-elevation-2 border-border/70">
+            <Card key={stat.label} className="border-slate-200 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1.5">
@@ -241,7 +237,7 @@ export default function AdminUsersPage() {
 
       {/* User list */}
       <Section title="All Users" description={`${users.length} total member${users.length !== 1 ? "s" : ""}`}>
-        <Card className="shadow-elevation-2 border-border/70">
+        <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-0">
             {loading ? (
               <div className="py-12 text-center text-sm text-muted-foreground">Loading...</div>
@@ -355,7 +351,6 @@ export default function AdminUsersPage() {
           </form>
         </DialogContent>
       </Dialog>
-      </div>
-    </div>
+    </PageShell>
   )
 }

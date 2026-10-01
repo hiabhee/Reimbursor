@@ -241,51 +241,51 @@ export function AdminExpenseTable({ expenses, companyCurrency, employees }: Admi
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="group hover:shadow-elevation-3 transition-all duration-300 cursor-pointer" onClick={() => setStatusFilter("ALL")}>
+        <Card className="group cursor-pointer border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-md" onClick={() => setStatusFilter("ALL")}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-label text-muted-foreground">Total Expenses</p>
                 <p className="text-3xl font-bold text-headline mt-1">{stats.total}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-indigo-100 text-indigo-600 group-hover:scale-110 transition-transform">
+              <div className="rounded-md bg-indigo-100 p-3 text-indigo-600 transition-transform group-hover:scale-110">
                 <FileText className="w-6 h-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-elevation-3 transition-all duration-300 cursor-pointer" onClick={() => setStatusFilter("PENDING")}>
+        <Card className="group cursor-pointer border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-md" onClick={() => setStatusFilter("PENDING")}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-label text-muted-foreground">Pending</p>
                 <p className="text-3xl font-bold text-headline mt-1">{stats.pending}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-amber-100 text-amber-600 group-hover:scale-110 transition-transform">
+              <div className="rounded-md bg-amber-100 p-3 text-amber-600 transition-transform group-hover:scale-110">
                 <Clock className="w-6 h-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-elevation-3 transition-all duration-300 cursor-pointer" onClick={() => setStatusFilter("OVERRIDE")}>
+        <Card className="group cursor-pointer border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-md" onClick={() => setStatusFilter("OVERRIDE")}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-label text-muted-foreground">Admin Overridden</p>
                 <p className="text-3xl font-bold text-headline mt-1">{stats.overridden}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-purple-100 text-purple-600 group-hover:scale-110 transition-transform">
+              <div className="rounded-md bg-purple-100 p-3 text-purple-600 transition-transform group-hover:scale-110">
                 <AlertTriangle className="w-6 h-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-elevation-3 transition-all duration-300 cursor-pointer" onClick={() => setStatusFilter("REJECTED")}>
+        <Card className="group cursor-pointer border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-md" onClick={() => setStatusFilter("REJECTED")}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -294,7 +294,7 @@ export function AdminExpenseTable({ expenses, companyCurrency, employees }: Admi
                   {expenses.filter(e => e.status === "REJECTED").length}
                 </p>
               </div>
-              <div className="p-3 rounded-2xl bg-red-100 text-red-600 group-hover:scale-110 transition-transform">
+              <div className="rounded-md bg-red-100 p-3 text-red-600 transition-transform group-hover:scale-110">
                 <X className="w-6 h-6" />
               </div>
             </div>
@@ -432,7 +432,7 @@ export function AdminExpenseTable({ expenses, companyCurrency, employees }: Admi
         <CardContent className="p-0">
           {filteredExpenses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
-              <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-surface">
                 <FileText className="w-8 h-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold text-headline">No expenses found</h3>

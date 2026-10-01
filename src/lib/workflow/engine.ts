@@ -1035,12 +1035,21 @@ export class WorkflowEngine {
               stepOrder: { gt: currentStep },
             },
             orderBy: { stepOrder: "asc" },
-            take: 1,
           },
         },
       })
 
-      if (!workflow || workflow.steps.length === 0) {
+      // Apply the same amount thresholds used when the workflow was instantiated,
+      // otherwise a step with minAmount/maxAmount that does not apply to this
+      // expense would still be activated on advance.
+      const applicableSteps = workflow
+        ? await this.selectWorkflowSteps(
+            workflow.steps.map(convertToWorkflowStep),
+            Number(expense.convertedAmount)
+          )
+        : []
+
+      if (!workflow || applicableSteps.length === 0) {
         await prisma.expense.update({
           where: { id: this.expenseId },
           data: {
@@ -1056,7 +1065,7 @@ export class WorkflowEngine {
         return { success: true, nextStepIndex: -1, expenseApproved: true }
       }
 
-      const nextStep = convertToWorkflowStep(workflow.steps[0])
+      const nextStep = applicableSteps[0]!
 
       const createdActions = await this.createApprovalActionsForStep(nextStep, {
         id: expense.id,

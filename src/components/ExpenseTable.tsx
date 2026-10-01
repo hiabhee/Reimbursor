@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Plus, Trash2, Eye, FileText, Filter } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 
 interface Expense {
   id: string
@@ -146,7 +147,7 @@ export function ExpenseTable({
       className: "min-w-[180px]",
       cell: (e) => (
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center shrink-0">
             <FileText className="w-3 h-3 text-muted-foreground" />
           </div>
           <span className="truncate font-medium text-foreground">{e.description}</span>
@@ -223,7 +224,7 @@ export function ExpenseTable({
         <button
           type="button"
           title="View"
-          className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
         </button>
@@ -234,7 +235,7 @@ export function ExpenseTable({
           title="Delete"
           disabled={deleting === e.id}
           onClick={() => handleDelete(e.id)}
-          className="h-6 w-6 flex items-center justify-center rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+          className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -243,42 +244,31 @@ export function ExpenseTable({
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <PageShell>
       {/* Page header */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h1 className="text-[15px] font-semibold text-foreground">Expenses</h1>
-          <p className="text-[12px] text-muted-foreground">{expenses.length} total records</p>
-        </div>
-        {showCreateButton && (
+      <PageIntro
+        eyebrow="Reimbursements"
+        title="Expenses"
+        description="Track and manage your reimbursement requests."
+        actions={showCreateButton ? (
           <Link href="/expenses/new">
-            <Button size="sm" className="h-7 text-[12px] gap-1 px-2.5">
-              <Plus className="w-3.5 h-3.5" /> New
+            <Button className="h-10 gap-2 px-4 text-sm shadow-sm">
+              <Plus className="h-4 w-4" /> New Expense
             </Button>
           </Link>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Summary strip */}
       <SummaryStrip
         items={stripItems}
         activeKey={statusFilter}
         onSelect={handleFilterChange}
-        className="mb-3"
       />
 
       {/* Table container */}
-      <div className="border border-border rounded-md overflow-hidden flex flex-col">
+      <div className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <EnterpriseToolbar
-          actions={
-            showCreateButton ? (
-              <Link href="/expenses/new">
-                <Button size="sm" className="h-7 text-[12px] gap-1 px-2.5">
-                  <Plus className="w-3.5 h-3.5" /> New
-                </Button>
-              </Link>
-            ) : undefined
-          }
           search={search}
           onSearchChange={(v) => { setSearch(v); setPage(1) }}
           searchPlaceholder="Search expenses..."
@@ -303,7 +293,7 @@ export function ExpenseTable({
             <button
               type="button"
               onClick={handleBulkDelete}
-              className="h-6 px-2 text-[12px] rounded border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
+              className="h-6 px-2 text-[12px] rounded-md border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
             >
               <Trash2 className="w-3 h-3" /> Delete
             </button>
@@ -323,13 +313,13 @@ export function ExpenseTable({
           className="border-0 rounded-none"
         />
 
-        <TablePagination
+      <TablePagination
           page={page}
           pageSize={PAGE_SIZE}
           total={filtered.length}
           onPageChange={setPage}
         />
       </div>
-    </div>
+    </PageShell>
   )
 }

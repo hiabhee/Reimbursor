@@ -45,25 +45,26 @@ export function EnterpriseToolbar({
   }
 
   return (
-    <div className={cn("enterprise-toolbar", className)}>
+    <div className={cn("enterprise-toolbar gap-3 p-3 sm:p-4", className)}>
       {actions && <div className="flex items-center gap-1">{actions}</div>}
 
       {onSearchChange !== undefined && (
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <div className="relative w-full max-w-md flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             ref={inputRef}
             type="text"
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full h-7 pl-7 pr-6 text-[13px] bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground"
+            className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-8 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
           />
           {search && (
             <button
               type="button"
               onClick={() => onSearchChange("")}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="w-3 h-3" />
             </button>
@@ -72,7 +73,7 @@ export function EnterpriseToolbar({
       )}
 
       {filters && (
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           {filters}
         </div>
       )}

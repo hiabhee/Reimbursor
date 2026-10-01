@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/formatCurrency"
-import { Users, Clock, CheckCircle2, DollarSign, Trash2, Search, Plus } from "lucide-react"
+import { Users, Clock, CheckCircle2, DollarSign, Trash2, Search, Plus, Receipt } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
 
 interface Expense {
   id: string
@@ -84,44 +85,45 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
   ]
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-page-title">Welcome back, {userName.split(" ")[0]}</h1>
-          <p className="text-body-muted mt-1">Full company overview and expense management.</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <Link href="/admin/users">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Users className="h-4 w-4" /> Manage Users
-            </Button>
-          </Link>
-          <Link href="/expenses/new">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> New Expense
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageIntro
+        eyebrow="Overview"
+        title={`Welcome back, ${userName.split(" ")[0]}`}
+        description="Full company overview and expense management."
+        actions={
+          <>
+            <Link href="/admin/users">
+              <Button variant="outline" size="sm" className="h-10 gap-2 px-4">
+                <Users className="h-4 w-4" /> Manage Users
+              </Button>
+            </Link>
+            <Link href="/expenses/new">
+              <Button size="sm" className="h-10 gap-2 px-4">
+                <Plus className="h-4 w-4" /> New Expense
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.label} className="shadow-elevation-2 border-border/70 hover:shadow-elevation-3 transition-shadow duration-200">
-              <CardContent className="p-5">
+            <Card key={stat.label} className="border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <CardContent className="p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1.5">
-                    <p className="text-label">{stat.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">{stat.label}</p>
                     {stat.isAmount ? (
                       <p className="text-xl font-bold tracking-tight text-foreground leading-none mt-2">{stat.value}</p>
                     ) : (
                       <p className="text-metric">{stat.value}</p>
                     )}
                   </div>
-                  <div className={cn("mt-0.5 p-2.5 rounded-lg shrink-0", stat.iconBg)}>
+                  <div className={cn("mt-0.5 p-2.5 rounded-md shrink-0", stat.iconBg)}>
                     <Icon className={cn("w-5 h-5", stat.iconColor)} />
                   </div>
                 </div>
@@ -132,8 +134,8 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+        <div className="relative w-full sm:max-w-md sm:flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -142,14 +144,14 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {STATUS_FILTERS.map((s) => (
             <Button
               key={s}
               size="sm"
               variant={statusFilter === s ? "default" : "outline"}
               onClick={() => setStatusFilter(s)}
-              className="text-xs"
+              className="h-9 px-3 text-xs"
             >
               {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
             </Button>
@@ -158,34 +160,38 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
       </div>
 
       {/* Table */}
-      <Card className="shadow-elevation-2 border-border/70">
+      <Card className="overflow-hidden rounded-lg border-slate-200 shadow-sm">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="px-4 py-3 text-left text-label">Employee</th>
-                  <th className="px-4 py-3 text-left text-label">Description</th>
-                  <th className="px-4 py-3 text-left text-label hidden md:table-cell">Category</th>
-                  <th className="px-4 py-3 text-left text-label hidden lg:table-cell">Date</th>
-                  <th className="px-4 py-3 text-right text-label">Amount</th>
-                  <th className="px-4 py-3 text-center text-label">Status</th>
-                  <th className="px-4 py-3 text-center text-label">Actions</th>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-5 py-4 text-left text-label">Employee</th>
+                  <th className="px-5 py-4 text-left text-label">Description</th>
+                  <th className="hidden px-5 py-4 text-left text-label md:table-cell">Category</th>
+                  <th className="hidden px-5 py-4 text-left text-label lg:table-cell">Date</th>
+                  <th className="px-5 py-4 text-right text-label">Amount</th>
+                  <th className="px-5 py-4 text-center text-label">Status</th>
+                  <th className="px-5 py-4 text-center text-label">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      No expenses found
+                    <td colSpan={7} className="px-6 py-20 text-center text-muted-foreground text-sm">
+                      <div className="mx-auto flex max-w-xs flex-col items-center gap-2">
+                        <Receipt className="h-8 w-8 text-slate-300" aria-hidden="true" />
+                        <p className="font-medium text-slate-700">No expenses found</p>
+                        <p className="text-xs text-slate-500">Submitted expenses will appear here for review.</p>
+                      </div>
                     </td>
                   </tr>
                 )}
                 {filtered.map((e) => (
                   <tr key={e.id} className="hover:bg-surface transition-colors group">
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-surface-high flex items-center justify-center text-xs font-semibold text-muted-foreground shrink-0">
+                        <div className="w-8 h-8 rounded-md bg-surface-high flex items-center justify-center text-xs font-semibold text-muted-foreground shrink-0">
                           {e.employee.name[0]}
                         </div>
                         <div>
@@ -194,26 +200,26 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <Link href={`/expenses/${e.id}`} className="font-medium hover:text-primary transition-colors">
                         {e.description}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="hidden px-5 py-4 md:table-cell">
                       <Badge variant="secondary" className="text-xs">{e.category}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                    <td className="hidden px-5 py-4 text-muted-foreground lg:table-cell">
                       {new Date(e.date).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold">
+                    <td className="px-5 py-4 text-right font-semibold tabular-nums">
                       {formatCurrency(e.convertedAmount, currency)}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-5 py-4 text-center">
                       <Badge variant={statusVariants[e.status] || "secondary"}>
                         {e.status.toLowerCase()}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <div className="flex items-center justify-center gap-1">
                         <Link href={`/expenses/${e.id}`}>
                           <Button variant="ghost" size="sm" className="text-xs h-7">View</Button>
@@ -255,10 +261,10 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
               {filtered.length > 0 && (
                 <tfoot>
                   <tr className="border-t border-border bg-muted/30">
-                    <td colSpan={4} className="px-4 py-3 text-right text-sm font-semibold text-muted-foreground">
+                    <td colSpan={4} className="px-5 py-4 text-right text-sm font-semibold text-muted-foreground">
                       Total ({filtered.length} records)
                     </td>
-                    <td className="px-4 py-3 text-right font-bold">{formatCurrency(total, currency)}</td>
+                    <td className="px-5 py-4 text-right font-bold tabular-nums">{formatCurrency(total, currency)}</td>
                     <td colSpan={2} />
                   </tr>
                 </tfoot>
@@ -267,6 +273,6 @@ export function AdminDashboard({ userName, currency, userCount, pendingCount, ap
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   )
 }

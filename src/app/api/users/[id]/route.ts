@@ -63,7 +63,7 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    if (user.role === "ADMIN" && role !== "ADMIN") {
+    if (user.role === "ADMIN" && role !== undefined && role !== "ADMIN") {
       const adminCount = await prisma.user.count({
         where: { companyId: session.user.companyId, role: "ADMIN" },
       })

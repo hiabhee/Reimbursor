@@ -3,6 +3,22 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AdminExpenseTable } from "@/components/AdminExpenseTable"
+import { PageIntro, PageShell } from "@/components/ui/page-shell"
+
+type AdminExpenseRecord = {
+  id: string
+  description: string
+  category: string
+  date: Date
+  submittedAmount: unknown
+  submittedCurrency: string
+  convertedAmount: unknown
+  status: string
+  employee: { name: string; email: string }
+  isAdminOverride: boolean
+  adminOverrideAt: Date | null
+  adminOverrideComment: string | null
+}
 
 export default async function AdminExpensesPage() {
   const session = await getServerSession(authOptions)
@@ -38,16 +54,14 @@ export default async function AdminExpensesPage() {
   })
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="o-breadcrumb">
-        <span className="text-gray-400 text-[12px]">Admin</span>
-        <span className="text-gray-300 mx-1">/</span>
-        <span className="text-[13px] font-semibold text-gray-800">All Expenses</span>
-        <span className="ml-2 text-[11px] text-gray-400">{company?.name}</span>
-      </div>
-      <div className="flex-1 overflow-auto p-4">
+    <PageShell>
+      <PageIntro
+        eyebrow="Administration"
+        title="All Expenses"
+        description={`Review and manage expenses across ${company?.name || "your company"}.`}
+      />
       <AdminExpenseTable
-        expenses={expenses.map((e) => ({
+        expenses={expenses.map((e: AdminExpenseRecord) => ({
           id: e.id,
           description: e.description,
           category: e.category,
@@ -64,7 +78,6 @@ export default async function AdminExpensesPage() {
         companyCurrency={company?.currency || "USD"}
         employees={employees}
       />
-      </div>
-    </div>
+    </PageShell>
   )
 }
